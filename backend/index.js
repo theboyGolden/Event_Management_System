@@ -42,7 +42,10 @@ async function run() {
     
         const database = client.db('EMS');
         const collection = database.collection('events');
+        const user_collection = database.collection('users');
+      
         
+        //create an event
         app.post("/events", async (req, res) => {
             try {
                 const event = req.body; // Get the event details from the request body
@@ -50,9 +53,11 @@ async function run() {
                 res.status(201).json({ message: "Event added successfully", result });
             } catch (error) {
             res.status(500).json({ message: "Failed to add event", error });
-    }
-});
+        }
+    });
 
+
+    //modify a specific event by id
     app.put("/events/:id", async (req, res) => {
         try {
             const id = req.params.id;
@@ -68,6 +73,7 @@ async function run() {
     });
 
 
+    //delete a specific event by id
     app.delete("/events/:id", async(req, res)=>{
         try {
             const id = req.params.id;
@@ -78,7 +84,60 @@ async function run() {
             res.status(500).json({ message: "Failed to delete event", error });
         }
     })
-        
+
+
+    //Fetch all events
+    app.get("/events", async (req, res) => {
+        try {
+            // Fetch all documents from the 'events' collection
+            const events = await collection.find({}).toArray();  // You can add a filter inside find({}) if necessary
+            res.status(200).json(events);  // Return the events as a JSON response
+        } catch (error) {
+            // Catch any error and send a 500 status code with error details
+            res.status(500).json({ message: "Failed to retrieve events", error: error.message });
+        }
+    });
+    
+
+    //fetch specific event by id
+    app.get("/events/:id", async (req, res) => {
+        try {
+            const id = req.params.id;
+            const event = await collection.findOne({ _id: new ObjectId(id) });
+    
+            if (event) {
+                // Event found, send it in the response
+                res.status(200).json(event);
+            } else {
+                // Event not found, send a 404 status code
+                res.status(404).json({ message: "Event not found" });
+            }
+        } catch (error) {
+            // Handle potential errors (e.g., invalid ObjectId)
+            res.status(500).json({ message: "Failed to retrieve event", error: error.message });
+        }
+    });
+    
+    
+
+
+
+    //User Registration and Login
+
+    app.post("/users", async (req, res)=>{
+        try{
+            const user = req.body;
+            await user_collection.insertOne(user);
+            res.status(201).json({message: "User registered succesfully"});
+        } catch(error){
+            res.status(500).json({message: "Failed to register user", error});
+        }
+    })
+
+
+
+
+    
 
     } catch (error) {
         console.log(`Error: ${error}`)
